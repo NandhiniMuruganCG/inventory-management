@@ -7,6 +7,7 @@ export default {
     finance: '財務',
     demandForecast: '需要予測',
     restocking: '再度在庫補充',
+    reports: 'レポート',
     companyName: '触媒コンポーネンツ',
     subtitle: '在庫管理システム'
   },
@@ -117,6 +118,8 @@ export default {
     quantity: '数量',
     leadTime: 'リードタイム',
     days: '日',
+    exportCsv: 'CSVエクスポート',
+    exportSuccess: 'CSVが正常にエクスポートされました',
     table: {
       orderNumber: '注文番号',
       orderId: '注文ID',
@@ -219,6 +222,29 @@ export default {
       trend: 'トレンド',
       period: '期間'
     }
+  },
+
+  // Reports
+  reports: {
+    title: 'パフォーマンスレポート',
+    description: '四半期ごとのパフォーマンス指標と月別トレンドを表示',
+    quarterlyPerformance: '四半期ごとのパフォーマンス',
+    monthlyRevenueTrend: '月別収益トレンド',
+    monthOverMonth: '前月比分析',
+    quarter: '四半期',
+    month: '月',
+    totalOrders: '総注文数',
+    totalRevenue: '総収益',
+    avgOrderValue: '平均注文額',
+    fulfillmentRate: '履行率',
+    orders: '注文',
+    revenue: '収益',
+    change: '変化',
+    growthRate: '成長率',
+    totalRevenueYTD: '総収益（年初来）',
+    avgMonthlyRevenue: '平均月間収益',
+    totalOrdersYTD: '総注文数（年初来）',
+    bestQuarter: '最高四半期'
   },
 
   // Filters

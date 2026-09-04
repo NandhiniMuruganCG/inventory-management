@@ -30,6 +30,7 @@
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">{{ t('orders.allOrders') }} ({{ orders.length }})</h3>
+          <button class="btn-export" @click="exportOrdersCsv">{{ t('orders.exportCsv') }}</button>
         </div>
         <div class="table-container">
           <table class="orders-table">
@@ -78,6 +79,13 @@
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">{{ t('orders.submittedOrders') }} ({{ restockOrders.length }})</h3>
+          <button
+            class="btn-export"
+            :disabled="restockOrders.length === 0"
+            @click="exportRestockOrdersCsv"
+          >
+            {{ t('orders.exportCsv') }}
+          </button>
         </div>
         <div v-if="restockOrders.length === 0" class="empty-state">
           {{ t('orders.noSubmittedOrders') }}
@@ -126,6 +134,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Export success toast -->
+    <div v-if="toastMessage" class="export-toast">{{ toastMessage }}</div>
   </div>
 </template>
 
@@ -213,6 +224,84 @@ export default {
       })
     }
 
+    // Toast notification shown briefly after a successful CSV export
+    const toastMessage = ref('')
+    let toastTimeout = null
+    const showToast = (message) => {
+      toastMessage.value = message
+      clearTimeout(toastTimeout)
+      toastTimeout = setTimeout(() => {
+        toastMessage.value = ''
+      }, 2500)
+    }
+
+    // Escape a value for safe inclusion in a CSV cell (wrap in quotes, double-escape existing quotes)
+    const escapeCsvCell = (value) => {
+      const stringValue = String(value ?? '')
+      return `"${stringValue.replace(/"/g, '""')}"`
+    }
+
+    // Build a CSV string from headers + row arrays, then trigger a client-side download
+    const downloadCsv = (filename, headers, rows) => {
+      const lines = [headers, ...rows].map(row => row.map(escapeCsvCell).join(','))
+      const csvContent = lines.join('\r\n')
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }
+
+    const exportOrdersCsv = () => {
+      const headers = [
+        t('orders.table.orderNumber'),
+        t('orders.table.customer'),
+        t('orders.table.items'),
+        t('orders.table.status'),
+        t('orders.table.orderDate'),
+        t('orders.table.expectedDelivery'),
+        t('orders.table.totalValue')
+      ]
+      const rows = orders.value.map(order => [
+        order.order_number,
+        translateCustomerName(order.customer),
+        order.items.map(item => translateProductName(item.name)).join(', '),
+        t(`status.${order.status.toLowerCase()}`),
+        formatDate(order.order_date),
+        formatDate(order.expected_delivery),
+        order.total_value
+      ])
+      downloadCsv('orders.csv', headers, rows)
+      showToast(t('orders.exportSuccess'))
+    }
+
+    const exportRestockOrdersCsv = () => {
+      const headers = [
+        t('orders.table.orderNumber'),
+        t('orders.table.items'),
+        t('orders.table.status'),
+        t('orders.table.orderDate'),
+        t('orders.table.expectedDelivery'),
+        t('orders.leadTime'),
+        t('orders.table.totalValue')
+      ]
+      const rows = restockOrders.value.map(order => [
+        order.order_number,
+        order.items.map(item => item.item_name).join(', '),
+        t(`status.${order.status.toLowerCase()}`),
+        formatDate(order.order_date),
+        formatDate(order.expected_delivery),
+        order.lead_time_days,
+        order.total_value
+      ])
+      downloadCsv('submitted-orders.csv', headers, rows)
+      showToast(t('orders.exportSuccess'))
+    }
+
     onMounted(() => {
       loadOrders()
       loadRestockOrders()
@@ -229,7 +318,10 @@ export default {
       formatDate,
       currencySymbol,
       translateProductName,
-      translateCustomerName
+      translateCustomerName,
+      toastMessage,
+      exportOrdersCsv,
+      exportRestockOrdersCsv
     }
   }
 }
@@ -349,5 +441,42 @@ export default {
 .item-meta {
   font-size: 0.813rem;
   color: #64748b;
+}
+
+/* Export button - matches app btn-secondary styling, sized for card header */
+.btn-export {
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-export:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.btn-export:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Toast notification for successful export, auto-dismisses */
+.export-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: #0f172a;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 1000;
 }
 </style>
